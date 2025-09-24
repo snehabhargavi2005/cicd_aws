@@ -1,53 +1,31 @@
-name: Deploy Ecommerce Fullstack App on EC2
+services:
+  db:
+    image: mysql:8.0
+    container_name: cineva-db
+    environment:
+      MYSQL_ROOT_PASSWORD: Bhargavi@2005
+      MYSQL_DATABASE: video
+    ports:
+      - "3308:3306"
 
-on:
-  push:
-    branches:
-      - main
-  workflow_dispatch:
+  backend:
+    build: ./CinevaBackend
+    container_name: cineva-backend
+    depends_on:
+      db:
+        condition: service_healthy
+    environment:
+      SPRING_DATASOURCE_URL: jdbc:mysql://db:3306/video?useSSL=false&allowPublicKeyRetrieval=true&serverTimezone=UTC
+      SPRING_DATASOURCE_USERNAME: root
+      SPRING_DATASOURCE_PASSWORD: Bhargavi@2005
+      SPRING_JPA_HIBERNATE_DDL_AUTO: update
+    ports:
+      - "8082:8081"
 
-jobs:
-  deploy:
-    runs-on: ubuntu-latest
-
-    steps:
-      # Step 1: Checkout repo
-      - name: Checkout Repo
-        uses: actions/checkout@v3
-
-      # Step 2: Debug - list files in repo
-      - name: List repo files
-        run: ls -la
-
-      # Step 3: Copy files to EC2
-      - name: Copy repo to EC2
-        uses: appleboy/scp-action@v0.1.7
-        with:
-          host: ${{ vars.EC2_HOST }}
-          username: ubuntu
-          key: ${{ vars.EC2_SSH_KEY }}
-          port: 22
-          source: "."
-          target: /home/ubuntu/ecommercefullstack
-
-      # Step 4: Deploy on EC2
-      - name: Deploy on EC2 with Docker Compose
-        uses: appleboy/ssh-action@v1.0.0
-        with:
-          host: ${{ vars.EC2_HOST }}
-          username: ubuntu
-          key: ${{ vars.EC2_SSH_KEY }}
-          port: 22
-          script_stop: true
-          script: |
-            cd /home/ubuntu/ecommercefullstack
-            
-            # Install Docker Compose (not just plugin)
-            if ! command -v docker-compose &> /dev/null; then  # ✅ FIXED: "i" → "!" and "&s" → "&>"
-              sudo apt-get update -y
-              sudo apt-get install -y docker-compose
-            fi
-
-            # Stop and start with docker-compose
-            sudo docker-compose down
-            sudo docker-compose up -d --build
+  frontend:
+    build: .  # ← CHANGED: ./docker-frontend → .
+    container_name: cineva-frontend
+    depends_on:
+      - backend
+    ports:
+      - "3000:80"
