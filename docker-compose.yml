@@ -3,17 +3,17 @@ services:
     image: mysql:8.0
     container_name: cineva-db
     environment:
-      MYSQL_ROOT_PASSWORD: root
+      MYSQL_ROOT_PASSWORD: Bhargavi@2005
       MYSQL_DATABASE: video
     volumes:
       - mysql_data:/var/lib/mysql
     healthcheck:
-      test: ["CMD", "mysqladmin", "ping", "-h", "localhost", "-uroot", "-proot"]
+      test: ["CMD", "mysqladmin", "ping", "-h", "localhost", "-uroot", "-pBhargavi@2005"]
       interval: 10s
       timeout: 5s
       retries: 10
     ports:
-      - "3308:3306"  # ✅ CHANGED: 3307 → 3308 (port was already allocated)
+      - "3308:3306"
 
   backend:
     build: ./CinevaBackend
@@ -37,15 +37,13 @@ services:
       - ./videos:/app/videos
 
   frontend:
-    build: ./docker-frontend  # ✅ CHANGED: docker-frontend → video_fro (folder name fix)
+    build: .  # ✅ Build from current directory (where Dockerfile is located)
     container_name: cineva-frontend
     depends_on:
       - backend
     ports:
       - "3000:80"
     restart: unless-stopped
-    volumes:
-      - ./videos:/usr/share/nginx/html/videos
 
 volumes:
   mysql_data:
